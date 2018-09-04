@@ -46,7 +46,7 @@ userdistance=2.5
 
 ####Phase 1#############################################################################
 #Phase 1 involves taking all input streamlines and placing a point every userdistance apart on the lines
-##arcpy.SelectLayerByAttribute_management(polyline, "NEW_SELECTION","Strahler_Stream_Order_ > 1")
+##arcpy.SelectLayerByAttribute_management(polyline, "NEW_SELECTION","Stream_Order > 1")
 
 #copy input streamlines into memory to imporve processing time
 mem_lines=copy_features(polyline,r"in_memory/lines","")
@@ -57,10 +57,10 @@ mem_point = arcpy.CreateFeatureclass_management(r"in_memory", "points_in_memory"
 #add necessary fields to the point feature class
 arcpy.AddField_management(mem_point, "LineOID", "LONG")
 arcpy.AddField_management(mem_point, "Value", "FLOAT")
-arcpy.AddField_management(mem_point, "Strahler_Stream_Order_", "FLOAT")
+arcpy.AddField_management(mem_point, "Stream_Order", "FLOAT")
 
-search_fields = ["SHAPE@", "OID@","Strahler_Stream_Order_"]
-insert_fields = ["SHAPE@", "LineOID", "Value","Strahler_Stream_Order_"]
+search_fields = ["SHAPE@", "OID@","Stream_Order"]
+insert_fields = ["SHAPE@", "LineOID", "Value","Stream_Order"]
 
 arcpy.AddMessage("Setting up the data for processing....")
 arcpy.AddMessage("\t\tDrawing points...")
@@ -82,7 +82,7 @@ with arcpy.da.SearchCursor(mem_lines, (search_fields)) as search:
 
                 #stream order is stream order in search fields
                 #insert value into point field
-                streamorder=str(row[2])
+                streamorder=row[2]
 
                 #creates a point at the start and end of line for final point that is less then the userdistance away
                 start_of_line = arcpy.PointGeometry(line_geom.firstPoint)
@@ -115,11 +115,11 @@ arcpy.DeleteFeatures_management(mem_lines)
 arcpy.AddMessage("\t\tBuffering points...")
 
 smallbuffers=os.path.join(env.workspace,naming+"_smallbuffers")
-small_streams=arcpy.MakeFeatureLayer_management(perm_pointz,"small_points","Strahler_Stream_Order_ <=2")
+small_streams=arcpy.MakeFeatureLayer_management(perm_pointz,"small_points","Stream_Order <=2")
 arcpy.Buffer_analysis(small_streams, smallbuffers, "25 Meters")
 
 largebuffers=os.path.join(env.workspace,naming+"_largebuffers")
-large_streams=arcpy.MakeFeatureLayer_management(perm_pointz,"large_points","Strahler_Stream_Order_ >2")
+large_streams=arcpy.MakeFeatureLayer_management(perm_pointz,"large_points","Stream_Order >2")
 arcpy.Buffer_analysis(large_streams, largebuffers, "50 Meters")
 
 buffers=os.path.join(env.workspace,naming+"buffer")
@@ -148,7 +148,7 @@ arcpy.PolygonToRaster_conversion(buffers, "OBJECTID", bufferraster, "#", "#", 1)
 
 #now convert the buffers to rasters by stream order
 streamorderraster=os.path.join(env.workspace,naming+"_SOraster")
-arcpy.PolygonToRaster_conversion(buffers, "Strahler_Stream_Order_", streamorderraster, "#", "#", 1)
+arcpy.PolygonToRaster_conversion(buffers, "Stream_Order", streamorderraster, "#", "#", 1)
 
 #now add all the raster data created to the points for analysis
 inRasterlist=[[bufferraster],[outZonalStats],[streamorderraster]]
@@ -169,4 +169,3 @@ arcpy.Delete_management(perm_pointz)
 arcpy.Delete_management(smallbuffers)
 arcpy.Delete_management(largebuffers)
 arcpy.Delete_management(buffers)
-

@@ -101,6 +101,8 @@ def calculate_bankfull(points,ac_polygons):
         arcpy.AddField_management(points, "OG_OID", "INTEGER")
         arcpy.CalculateField_management (points, "OG_OID", "!OBJECTID!", "PYTHON_9.3")
 
+##        new_points=os.path.join(env.workspace,naming+"wtfpoints")
+##        arcpy.CopyFeatures_management(points,new_points)
         arcpy.Near_analysis(points,ac_polygons)
         
         #make point feature class of all points with next to no slope
@@ -219,7 +221,6 @@ def export_bankfull(bf_group,counter,halfway_polys,ac_polys,complete_polys):
         #use fill gaps function to fill in gaps in the data
         points=os.path.join(env.workspace,naming+"_slopepoints"+str(counter))
         
-
         if counter!=1:
                 polys=fill_polygon_gaps(points,halfway_polys,ac_polys,counter)
                 arcpy.Append_management([polys],complete_polys)
@@ -232,7 +233,7 @@ def export_bankfull(bf_group,counter,halfway_polys,ac_polys,complete_polys):
 def fill_polygon_gaps(points,master_polys,ac_polys,counter):
 
         #calculate dist of points from ac polygons
-        arcpy.Near_analysis(points,ac_polygons)
+        arcpy.Near_analysis(points,ac_polys)
 
         #copy result into second field
         arcpy.AddField_management(points, "NEAR_DIST2", "FLOAT")
@@ -299,20 +300,19 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
                         arcpy.AddMessage("Analyzing Area "+str(iteration_count)+" of " + str(int(math.ceil(float(streamlines_count)/float(3)))))
 ##                        arcpy.AddMessage("Beginning process for count:"+str(counter)+"-"+str(counter+2))
 ##                        arcpy.AddMessage("selecting lines")
-##                        arcpy.AddMessage("OBJECTID >="+str(counter)+" AND OBJECTID<="+str(counter+2))
+                        
                         #select some streamlines
-
                         streamlines_select=arcpy.MakeFeatureLayer_management(streamlines,"layerp","OBJECTID >="+str(counter)+" AND OBJECTID<="+str(counter+2))
 
                         #extract points for selected streamlines
                         extracted_points=extract_selection(streamlines_select,counter,slope)
-
+                        
                         #select ac polygons corresponding to selected streamlines
 ##                        arcpy.AddMessage("selecting polygons")
                         arcpy.SelectLayerByLocation_management(ac_polygons, "intersect", streamlines_select)
 
                         #load points and polygons into calculate bankfull function
-##                        arcpy.AddMessage("calculating bankfull")
+##                        arcpy.AddMessage("calculating bankfull"
                         calculate_bankfull(extracted_points,ac_polygons)
 
                         #take bf points, copy them into perm memory
@@ -322,10 +322,10 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 
                         #load data into export bankfull to build polygons
                         if counter==1:
-                                result=export_bankfull(bf_group,counter,None,ac_polygons,None)
+                                result=export_bankfull(bf_group,counter,None,acpolys_copy,None)
 
                         else:
-                                result=export_bankfull(bf_group,counter,result[0],ac_polygons,result[1])
+                                result=export_bankfull(bf_group,counter,result[0],acpolys_copy,result[1])
 
                         #increment counter
                         counter+=3

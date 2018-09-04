@@ -22,7 +22,7 @@ centroidswithvalues=os.path.join(in_mem,naming+"centroidswithvalues"+str(randint
 final_segmented_AC=os.path.join(env.workspace,naming+"_polys_with_StreamShade")
 
 #only select treams that are second order and up
-##arcpy.SelectLayerByAttribute_management(oldstreams, "NEW_SELECTION","Strahler_Stream_Order_ > 1")
+##arcpy.SelectLayerByAttribute_management(oldstreams, "NEW_SELECTION","Stream_Order > 1")
 
 #CREATE THE STREAM BUFFER. THE ADVANCED LISCNESE WILL HAVE TO BE CHECKED OUT
 #SO FLAT OUTPUTS CAN BE OBTAINED

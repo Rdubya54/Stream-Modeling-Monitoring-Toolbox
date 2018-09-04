@@ -24,7 +24,7 @@ def calculate_aggregate_point_dist():
         if unit!="Feet":
                 unit=unit+"s"
 
-        arcpy.AddMessage("unit is "+str(unit))
+##        arcpy.AddMessage("unit is "+str(unit))
 
         agg_dist=str(agg_dist)+" "+unit
 
