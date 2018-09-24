@@ -214,7 +214,16 @@ with arcpy.da.UpdateCursor(polyline, (search_fields)) as update:
                 row[2]=end_value
                 distance=float(row[3])
 
-                gradient_final=(start_value-end_value)/distance
+                try:
+                        
+                        gradient_final=(start_value-end_value)/distance
+
+                except:
+                        arcpy.AddError("Error has occured because input streams were edited and now contain non-consecutive OBJECTID'S\
+                                         export the input streams to a new feature class and use the new feature class as the input when rerunning the tool\
+                                         to fix this.")
+                        import sys
+                        sys.exit()
 
                 row[4]=round(gradient_final,4)
                 update.updateRow(row)

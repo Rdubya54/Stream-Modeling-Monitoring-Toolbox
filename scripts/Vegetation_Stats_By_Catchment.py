@@ -98,11 +98,11 @@ arcpy.PolygonToRaster_conversion(catch_AC, "OBJECTID", catchment_raster, "#", "#
 ##randos=arcpy.CreateRandomPoints_management(env.workspace, "centroids", seg,"#", 25)
 #extract zonal values for each class to rando points
 
-projection = arcpy.Describe(catchments).spatialReference
+projection = arcpy.Describe(AC).spatialReference
 catchment_project=os.path.join(env.workspace,naming+"points_reproject")
 arcpy.ProjectRaster_management(catchment_raster, catchment_project, projection)
 
-desc = arcpy.Describe(catchments)
+desc = arcpy.Describe(AC)
 ref = desc.spatialReference
 ##arcpy.AddMessage("input catchments are "+str(ref.Name))
 
@@ -118,15 +118,15 @@ desc = arcpy.Describe(groundzonal)
 ref = desc.spatialReference
 ##arcpy.AddMessage("Zonals are "+str(ref.Name))
 
-desc = arcpy.Describe(catchment_raster)
+desc = arcpy.Describe(catchment_project)
 ref = desc.spatialReference
-##arcpy.AddMessage("catchemnt raster are "+str(ref.Name))
+##arcpy.AddMessage("catchemnt raster reprojected are "+str(ref.Name))
 
 desc = arcpy.Describe(randos)
 ref = desc.spatialReference
 ##arcpy.AddMessage("points are "+str(ref.Name))
 
-inRasterList=[[groundzonal,"Ground_Sum"],[underzonal,"Understory_Sum"],[overzonal,"Overstory_Sum"],[catchment_raster,"CATCHMENT_ID_12_13_14_15_16_17"]]
+inRasterList=[[groundzonal,"Ground_Sum"],[underzonal,"Understory_Sum"],[overzonal,"Overstory_Sum"],[catchment_project,"CATCHMENT_ID"]]
 ExtractMultiValuesToPoints(randos, inRasterList, "NONE")
 
 ##field_names = [f.name for f in arcpy.ListFields(randos)]
@@ -136,7 +136,7 @@ ExtractMultiValuesToPoints(randos, inRasterList, "NONE")
 
 ####search_fields = ["OID@","CID","Ground_Sum","Understory_Sum","Overstory_Sum"]
 ##arcpy.AddMessage("ZonalSt_"+naming[:4]+"1")
-search_fields = ["OID@","CATCHMENT_ID_12_13_14_15_16_17","Ground_Sum","Understory_Sum","Overstory_Sum"]
+search_fields = ["OID@","CATCHMENT_ID","Ground_Sum","Understory_Sum","Overstory_Sum"]
 ##search_fields = ["OID@","CATCHMENT_ID","ZonalSt_"+naming[:4]+"1","ZonalSt_"+naming[:4]+"2","ZonalSt_"+naming[:4]+"3"]
 
 update_fields = ["OID@","SHAPE@AREA","GROUND_COUNT","UNDER_COUNT","OVER_COUNT",
@@ -148,7 +148,7 @@ modelist_over=[]
 
 #sort random points by cid so that cursor works
 sorttable=os.path.join(env.workspace,naming+"_sorttable_")
-arcpy.Sort_management(randos, sorttable, [["CATCHMENT_ID_12_13_14_15_16_17", "ASCENDING"]])
+arcpy.Sort_management(randos, sorttable, [["CATCHMENT_ID", "ASCENDING"]])
 
 CID_counter=0
 previous_CID=None
