@@ -67,7 +67,7 @@ lyr=arcpy.MakeFeatureLayer_management(dem_points,"slayer",sql_query)
 arcpy.AddMessage("Copying identified points into workspace...(Step 2 of 3)")
 final_points=arcpy.CopyFeatures_management(lyr,os.path.join(env.workspace,naming+"_"+"AC_Points"))
 
-polys_draft=os.path.join(env.workspace, naming+"Active_Channel_Polys_draft")
+polys_draft=os.path.join(env.workspace, naming+"_Active_Channel_Polys_draft")
 
 #get necessary point dist for aggregate points. 
 agg_dist=calculate_aggregate_point_dist()

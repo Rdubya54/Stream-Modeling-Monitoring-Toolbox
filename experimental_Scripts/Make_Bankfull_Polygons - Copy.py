@@ -25,6 +25,28 @@ except Exception as e:
 
 env.workspace="C:/bankfull_dump.gdb"
 
+
+def get_sequential_ids(streamlines):
+
+        #store file path and name of input streams
+        streamlines_string=streamlines
+        
+        #copy the input streamlines.
+        #copy features will fix OBJECTID's not being sequential. 
+        streamlines_copy=arcpy.CopyFeatures_management(streamlines,os.path.join(env.workspace,naming+"streamlines_copy"))
+
+        #delete the potentially unsequitial streams.
+        arcpy.Delete_management(streamlines)
+
+        #save streamlines copy as original streams name
+        streamlines=arcpy.CopyFeatures_management(streamlines_copy,streamlines_string)
+
+        #delete streamlines_copy. its no longer needed
+        arcpy.Delete_management(streamlines_copy)
+
+        return streamlines
+
+
 def check_resolution(slope):
 ##        arcpy.AddMessage("Checking resolution of raster... ")
         demrez = arcpy.GetRasterProperties_management(slope,"CELLSIZEX")
@@ -103,19 +125,19 @@ def calculate_bankfull(points,ac_polygons):
 
         new_points=os.path.join(env.workspace,naming+"wtfpoints")
         arcpy.CopyFeatures_management(points,new_points)
-        arcpy.Near_analysis(points,acpolys_copy)
+        arcpy.Near_analysis(new_points,ac_polygons)
         
         #make point feature class of all points with next to no slope
 ##        arcpy.AddMessage("making no slopes")
         query="grid_code<=5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"nayer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"nayer",query)
         copy_features(lyr,env.workspace,"no_slope_points")
         no_slope_points=os.path.join(env.workspace,"no_slope_points")
 
         #make point feature class of all points with at least some slope
 ##        arcpy.AddMessage("making slopes")
         query="grid_code>5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"payer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"payer",query)
         copy_features(lyr,env.workspace,"slope_points")
         slope_points=os.path.join(env.workspace,"slope_points")
 
@@ -124,7 +146,7 @@ def calculate_bankfull(points,ac_polygons):
 ##        arcpy.AddMessage("making skeleton")
         #problem is not the lack of requirement
         query="NEAR_DIST<=12.5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"dayer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"dayer",query)
         copy_features(lyr,env.workspace,"barebones")
         bf_group=os.path.join(env.workspace,"barebones")
 
@@ -233,7 +255,7 @@ def export_bankfull(bf_group,counter,halfway_polys,ac_polys,complete_polys):
 def fill_polygon_gaps(points,master_polys,ac_polys,counter):
 
         #calculate dist of points from ac polygons
-        arcpy.Near_analysis(points,ac_polygons)
+        arcpy.Near_analysis(points,ac_polys)
 
         #copy result into second field
         arcpy.AddField_management(points, "NEAR_DIST2", "FLOAT")
@@ -241,7 +263,7 @@ def fill_polygon_gaps(points,master_polys,ac_polys,counter):
         
         #calculate dist of points from bankfull polys
         arcpy.Near_analysis(points,master_polys)
-
+        
         #select points that are adj to ac_polys, but not adj to bankfull polys
         query="NEAR_DIST2<=5 AND NEAR_DIST>0"
         lyr=arcpy.MakeFeatureLayer_management(points,"layera",query)
@@ -276,6 +298,8 @@ def fill_polygon_gaps(points,master_polys,ac_polys,counter):
         return final_polys
 
 #######################################################################################################################################
+#insure streamlines are sequential 
+streamlines=get_sequential_ids(streamlines)
 
 #check resolution of slope. resolution must be 5x5 for this process to work
 slope=check_resolution(slope)

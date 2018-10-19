@@ -37,9 +37,20 @@ def collect_point_info(points,mem_lines,order_rank,TOTAL_STREAMS_IDed):
                         #if we aren't looking for 1st order streams
                         if order_rank!=1:
                             #isolate only the starting point that has found a line partner
+                            arcpy.AddMessage("LineOID="+str(roww[0])+" AND Position=0")
                             paired_point=arcpy.MakeFeatureLayer_management(points,"paired_point_layer","LineOID="+str(roww[0])+" AND Position=0")
-
+                            paired_point=arcpy.CopyFeatures_management(paired_point,os.path.join(env.workspace,"temp"+str(roww[0])))
+                            mem_lines=arcpy.CopyFeatures_management(mem_lines,os.path.join(env.workspace,"templines"+str(roww[0])))
+                            
                             #find lines nearest to it
+
+                            #this is where its crashing
+##                            arcpy.AddMessage("nearing")
+                            arcpy.Near_analysis(mem_lines,paired_point)
+
+
+##                            arcpy.AddMessage("nearing again")
+                            mem_lines=arcpy.CopyFeatures_management(mem_lines,os.path.join(env.workspace,"lines_copy"+str(roww[0])))
                             arcpy.Near_analysis(mem_lines,paired_point)
 
                             #isolate lines that are adj to it (NEAR_DIST=0) and not the start of the line itself
@@ -89,6 +100,8 @@ def collect_point_info(points,mem_lines,order_rank,TOTAL_STREAMS_IDed):
 mem_lines = arcpy.GetParameterAsText(0)
 env.workspace=arcpy.env.scratchGDB
 ##env.workspace="N:/Wortmr/throwaway.gdb"
+
+mem_lines=arcpy.MakeFeatureLayer_management(mem_lines, "copy.lyr")
 
 #count number of streams so code knows when to stop
 countingstreams=arcpy.GetCount_management(mem_lines)
@@ -177,14 +190,17 @@ while TOTAL_STREAMS_IDed<streamcount:
 
         #select only lines that have NEAR DIST OF 0 to two or more firs order endpoints
         ####make first order stream only layer
+        arcpy.AddMessage("Making feature layer selection")
         past_order_streams=arcpy.MakeFeatureLayer_management(mem_lines,"first_order_lines","Stream_Order="+str(order_rank-1))
 
         ###calculate dist of starting points from selected streams
+##        arcpy.AddMessage("doing near")
         arcpy.Near_analysis(start_points,past_order_streams)
         ####select only points that are starting points and are adj to first order streams
+##        arcpy.AddMessage("selecting other")
         order_rank_points=arcpy.MakeFeatureLayer_management(start_points,"order_rank_start","NEAR_DIST=0")
 
-
+##        arcpy.AddMessage("lauching function")
         TOTAL_STREAMS_IDed=collect_point_info(order_rank_points,mem_lines,order_rank,TOTAL_STREAMS_IDed)
 
     #this is just for when after code is done iterating through all the lines once. This is where goes through
@@ -194,7 +210,21 @@ while TOTAL_STREAMS_IDed<streamcount:
             #select only lines with still unknown stream order
             null_streams=arcpy.MakeFeatureLayer_management(mem_lines,"first_order_lines","Stream_Order IS NULL")
             ###calculate dist of starting points from selected streams
-            arcpy.Near_analysis(start_points,null_streams)
+
+            try:
+                arcpy.Near_analysis(start_points,null_streams)
+
+            except arcpy.ExecuteError:
+
+                msgs = arcpy.GetMessages(2) 
+
+                # Return tool error messages for use with a script tool 
+                #
+                arcpy.AddError(msgs)
+                
+                start_points=arcpy.CopyFeatures_management(start_points,"copy.lyr")
+                arcpy.Near_analysis(start_points,null_streams)
+
             ####select only points that are starting points and are adj to null order streams
             order_rank_points=arcpy.MakeFeatureLayer_management(start_points,"order_rank_start","NEAR_DIST=0")
 

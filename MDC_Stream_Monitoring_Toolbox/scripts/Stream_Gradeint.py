@@ -42,6 +42,36 @@ def copy_features(features,workspace,copy_name):
 
         return copy_address
 
+
+#this function was created in order fix the problem of edited input stream lines no longer having sequential OBJECTID's. Tool fails if they aren't.
+#it returns streamlines with sequential OBJECTID's. It is run even if OBJECTID's are sequential because it would be more of
+#a pain to create code that checks for it verses just doing it everytime. 
+def get_sequential_ids(streamlines):
+
+        #change output gdb to user input
+        env.workspace=arcpy.GetParameterAsText(2)
+
+        #store file path and name of input streams
+        streamlines_string=streamlines
+        
+        #copy the input streamlines.
+        #copy features will fix OBJECTID's not being sequential. 
+        streamlines_copy=arcpy.CopyFeatures_management(streamlines,os.path.join(env.workspace,naming+"streamlines_copy"))
+
+        #delete the potentially unsequitial streams.
+        arcpy.Delete_management(streamlines)
+
+        #save streamlines copy as original streams name
+        streamlines=arcpy.CopyFeatures_management(streamlines_copy,streamlines_string)
+
+        #delete streamlines_copy. its no longer needed
+        arcpy.Delete_management(streamlines_copy)
+
+        #change output gdb back to scratch (just dumping data here so its easier to stick here and then delete)
+        env.workspace=arcpy.env.scratchGDB
+
+        return streamlines
+
 def get_units_of_inputs(dem,polyline):
 
         #get linear units of the dem
@@ -58,6 +88,7 @@ def get_units_of_inputs(dem,polyline):
 
 #get the measurement units of the inputs
 unit_results=get_units_of_inputs(dem,polyline)
+polyline=get_sequential_ids(polyline)
 
 ####Phase 1#############################################################################
 #Phase 1 involves taking all input streamlines and placing a point every userdistance apart on the lines
@@ -97,7 +128,6 @@ with arcpy.da.SearchCursor(mem_lines, (search_fields)) as search:
                 #creates a point at the start and end of line for final point that is less then the userdistance away
                 start_of_line = arcpy.PointGeometry(line_geom.firstPoint)
                 end_of_line = arcpy.PointGeometry(line_geom.lastPoint)
-                
                 
                 insert.insertRow((start_of_line, oid, "start"))
                 insert.insertRow((end_of_line, oid, "end"))
@@ -214,7 +244,16 @@ with arcpy.da.UpdateCursor(polyline, (search_fields)) as update:
                 row[2]=end_value
                 distance=float(row[3])
 
-                gradient_final=(start_value-end_value)/distance
+                try:
+                        
+                        gradient_final=(start_value-end_value)/distance
+
+                except:
+                        arcpy.AddError("Error has occured because input streams were edited and now contain non-consecutive OBJECTID'S\
+                                         export the input streams to a new feature class and use the new feature class as the input when rerunning the tool\
+                                         to fix this.")
+                        import sys
+                        sys.exit()
 
                 row[4]=round(gradient_final,4)
                 update.updateRow(row)

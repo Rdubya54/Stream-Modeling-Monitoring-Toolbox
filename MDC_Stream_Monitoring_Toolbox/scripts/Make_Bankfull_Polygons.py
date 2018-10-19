@@ -17,6 +17,7 @@ ac_polygons=arcpy.GetParameterAsText(2)
 env.workspace=arcpy.GetParameterAsText(3)
 naming=arcpy.GetParameterAsText(4)
 
+
 try:
         dump=arcpy.CreateFileGDB_management("C:/", "bankfull_dump.gdb")
 
@@ -24,6 +25,30 @@ except Exception as e:
         arcpy.AddMessage(str(e))
 
 env.workspace="C:/bankfull_dump.gdb"
+
+
+#this function was created in order fix the problem of edited input stream lines no longer having sequential OBJECTID's. Tool fails if they aren't.
+#it returns streamlines with sequential OBJECTID's. It is run even if OBJECTID's are sequential because it would be more of
+#a pain to create code that checks for it verses just doing it everytime. 
+def get_sequential_ids(streamlines):
+
+        #store file path and name of input streams
+        streamlines_string=streamlines
+        
+        #copy the input streamlines.
+        #copy features will fix OBJECTID's not being sequential. 
+        streamlines_copy=arcpy.CopyFeatures_management(streamlines,os.path.join(env.workspace,naming+"streamlines_copy"))
+
+        #delete the potentially unsequitial streams.
+        arcpy.Delete_management(streamlines)
+
+        #save streamlines copy as original streams name
+        streamlines=arcpy.CopyFeatures_management(streamlines_copy,streamlines_string)
+
+        #delete streamlines_copy. its no longer needed
+        arcpy.Delete_management(streamlines_copy)
+
+        return streamlines
 
 def check_resolution(slope):
 ##        arcpy.AddMessage("Checking resolution of raster... ")
@@ -101,8 +126,8 @@ def calculate_bankfull(points,ac_polygons):
         arcpy.AddField_management(points, "OG_OID", "INTEGER")
         arcpy.CalculateField_management (points, "OG_OID", "!OBJECTID!", "PYTHON_9.3")
 
-##        new_points=os.path.join(env.workspace,naming+"wtfpoints")
-##        arcpy.CopyFeatures_management(points,new_points)
+        new_points=os.path.join(env.workspace,naming+"wtfpoints")
+        arcpy.CopyFeatures_management(points,new_points)
         arcpy.Near_analysis(points,ac_polygons)
         
         #make point feature class of all points with next to no slope
@@ -276,6 +301,8 @@ def fill_polygon_gaps(points,master_polys,ac_polys,counter):
         return final_polys
 
 #######################################################################################################################################
+#insure streamlines are sequential 
+streamlines=get_sequential_ids(streamlines)
 
 #check resolution of slope. resolution must be 5x5 for this process to work
 slope=check_resolution(slope)
