@@ -83,6 +83,7 @@ arcpy.gp.FlowDirection_sa(Fill_with_Z,Filled_Flow,"NORMAL",drop_raster)
 if (resampledflag==1):
         arcpy.Delete_management(DEM5m)
 
+#delete extraneous feature classes
 arcpy.Delete_management(Flowdir)
 arcpy.Delete_management(sink_max)
 arcpy.Delete_management(sink_min)

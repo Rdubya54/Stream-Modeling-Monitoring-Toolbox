@@ -33,6 +33,7 @@ arcpy.gp.Reclassify_sa(ConRaster, "VALUE", "0 NODATA;1 1", Reclass, "DATA")
 arcpy.AddMessage("Converting Raster to Polyline (Step 3 of 3)")
 StreamToFeature(Reclass, filled_flow, Streams,"NO_SIMPLIFY")
 
+#smooth the lines if user has acess to advanced tools
 try:
     import arcpy.cartography as CA
     CA.SmoothLine(Streams, Streams_final, "PAEK", "15")

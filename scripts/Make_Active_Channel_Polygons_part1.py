@@ -45,7 +45,7 @@ def copy_features(features,workspace,copy_name):
 userdistance=2.5
 
 ####Phase 1#############################################################################
-#Phase 1 involves taking all input streamlines and placing a point every userdistance apart on the lines
+#Phase 1 involves taking all input streamlines and placing a point every userdistance on the lines
 ##arcpy.SelectLayerByAttribute_management(polyline, "NEW_SELECTION","Stream_Order > 1")
 
 #copy input streamlines into memory to imporve processing time
@@ -158,6 +158,7 @@ ExtractMultiValuesToPoints(dem_points,inRasterlist,"NONE")
 
 copy_features(dem_points,env.workspace,naming+"_dempoints_wattr")
 
+#delete extraneous feature classes
 arcpy.Delete_management(bufferraster)
 arcpy.Delete_management(streamorderraster)
 arcpy.Delete_management(masked)

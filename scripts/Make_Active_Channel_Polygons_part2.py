@@ -59,7 +59,8 @@ sql_query=("("+str(SO_field)+"=1 AND grid_code <= ("+str(minfield)+"+"+str(tol_1
 "("+str(SO_field)+"=7 AND grid_code <= ("+str(minfield)+"+"+str(tol_7)+")) OR ("+ str(SO_field)+">=8 AND grid_code <= ("+str(minfield)+"+"+str(tol_8)+"))")
 
 arcpy.AddMessage(sql_query)
- 
+
+#select points that fit query 
 lyr=arcpy.MakeFeatureLayer_management(dem_points,"slayer",sql_query)
 
 #use a while loop to itrate until counter exceeds buffer number
