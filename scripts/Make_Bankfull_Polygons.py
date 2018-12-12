@@ -131,19 +131,21 @@ def calculate_bankfull(points,ac_polygons):
         #calculate which ac_polygons 
         new_points=os.path.join(env.workspace,naming+"wtfpoints")
         arcpy.CopyFeatures_management(points,new_points)
-        arcpy.Near_analysis(points,ac_polygons)
+        ac_polys_copy=os.path.join(env.workspace,naming+"wtfpolys")
+        arcpy.CopyFeatures_management(ac_polygons,ac_polys_copy)
+        arcpy.Near_analysis(new_points,ac_polys_copy)
         
         #make point feature class of all points with next to no slope
 ##        arcpy.AddMessage("making no slopes")
         query="grid_code<=5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"nayer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"nayer",query)
         copy_features(lyr,env.workspace,"no_slope_points")
         no_slope_points=os.path.join(env.workspace,"no_slope_points")
 
         #make point feature class of all points with at least some slope
 ##        arcpy.AddMessage("making slopes")
         query="grid_code>5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"payer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"payer",query)
         copy_features(lyr,env.workspace,"slope_points")
         slope_points=os.path.join(env.workspace,"slope_points")
 
@@ -152,7 +154,7 @@ def calculate_bankfull(points,ac_polygons):
 ##        arcpy.AddMessage("making skeleton")
         #problem is not the lack of requirement
         query="NEAR_DIST<=12.5"
-        lyr=arcpy.MakeFeatureLayer_management(points,"dayer",query)
+        lyr=arcpy.MakeFeatureLayer_management(new_points,"dayer",query)
         copy_features(lyr,env.workspace,"barebones")
         bf_group=os.path.join(env.workspace,"barebones")
 
@@ -299,17 +301,17 @@ def fill_polygon_gaps(points,master_polys,ac_polys,counter):
         arcpy.Merge_management([gap_polys,master_polys], filled_polys)
 
         #aggregate polys
-        pred_final_polys=os.path.join(env.workspace,naming+"prediss_bankfull_polys_final"+str(counter))
-        arcpy.AggregatePolygons_cartography(filled_polys, pred_final_polys, "7.5 Meters")
+        final_polys=os.path.join(env.workspace,naming+"bankfull_polys_final"+str(counter))
+        arcpy.AggregatePolygons_cartography(filled_polys, final_polys, "7.5 Meters")
 
         #after aggreagating polygons there will be a bunch of BS little polygons that we don't need
         #use dissolve tool to eliminate these little guys, but first you must use near tool to get proper
         #parameters for dissolving. we are going to dissolve by nearest stream so run near on polygons and streams.
         
-        arcpy.Near_analysis(pred_final_polys,ac_polys)
-                
-        final_polys=os.path.join(env.workspace,naming+"bankfull_polys_final"+str(counter))
-        arcpy.Dissolve_management(pred_final_polys, final_polys,["NEAR_FID", "TAXCODE"])
+##        arcpy.Near_analysis(pred_final_polys,ac_polys)
+##                
+##        final_polys=os.path.join(env.workspace,naming+"bankfull_polys_final"+str(counter))
+##        arcpy.Dissolve_management(pred_final_polys, final_polys,["NEAR_FID", "TAXCODE"])
 
         return final_polys
 
@@ -327,6 +329,9 @@ slope=check_resolution(slope)
 #makes streamlines into feature layer so you can iterate through it
 streamlines=arcpy.MakeFeatureLayer_management(streamlines,"slayer")
 ac_polygons=arcpy.MakeFeatureLayer_management(ac_polygons,"layer")
+
+#need to keep a permanent version of this around since the Near tool doesn't like feature layers
+acpolys_perm=arcpy.GetParameterAsText(2)
 
 ##arcpy.AddMessage("getting count")   
 streamlines_count = int(arcpy.GetCount_management(streamlines).getOutput(0))
@@ -367,10 +372,10 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 
                         #load data into export bankfull to build polygons
                         if counter==1:
-                                result=export_bankfull(bf_group,counter,None,acpolys_copy,None)
+                                result=export_bankfull(bf_group,counter,None,acpolys_perm,None)
 
                         else:
-                                result=export_bankfull(bf_group,counter,result[0],acpolys_copy,result[1])
+                                result=export_bankfull(bf_group,counter,result[0],acpolys_perm,result[1])
 
                         #increment counter
                         counter+=3
@@ -380,6 +385,8 @@ arcpy.SelectLayerByAttribute_management(ac_polygons, "CLEAR_SELECTION")
 #clean up bankfull polygon overextractions by getting rid of bankfull polys that are not adj to
 #ac polys
 close_bankfull=os.path.join(env.workspace,naming+"bankfull_polys_final1")
+copy_features(ac_polygons,env.workspace,"perm_AC")
+ac_polygons=os.path.join(env.workspace,"perm_AC")
 arcpy.Near_analysis(close_bankfull,ac_polygons)
 query="NEAR_DIST=0"
 lyr=arcpy.MakeFeatureLayer_management(close_bankfull,"layerz",query)
