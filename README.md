@@ -1,4 +1,4 @@
-"# **Stream Modeling/Monitoring Toolbox**" 
+**Stream Modeling/Monitoring Toolbox**
 
 The Stream Modeling/Monitoring Toolbox is a GIS toolbox that allows the user to extract various stream data for thier input area of interest using only a LiDAR data as an input. Stream data the Stream Modeling/Monitoring Toolbox can extract includes:
 
