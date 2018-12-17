@@ -13,7 +13,7 @@ The Stream Modeling/Monitoring Toolbox is a GIS toolbox that allows the user to 
     * Ripriarin Corridor Polygons
     * Vegetation Height
     * Percent of Stream Shaded
-    * Vegetation Statistics By Catchment
+    * Vegetation Statistics of Streams By Catchment
     
 ArcMap is required to use this toolbox. In order to be able to extract any stream data, the user must have a LAS file (LiDAR data) of the area for which they want to acquire stream data. If the user does not have one, LiDAR datasets are becoming increasingly avaialbe for free download on the web. An example of a site that provides free LiDAR data: http://www.msdis.missouri.edu/data/lidar/index.html .
 
