@@ -239,7 +239,7 @@ def export_bankfull(bf_group,counter,halfway_polys,ac_polys,complete_polys):
 
         copy_features(bf_group,env.workspace, naming+"bankfull"+str(counter))
 
-        if counter!=1:
+        if counter!=0:
                 polys=os.path.join(env.workspace,naming+"bankfull_polys"+str(counter))
                 arcpy.AggregatePoints_cartography(bf_group,polys, "7.5 meters")
                 arcpy.Append_management([polys],halfway_polys)
@@ -251,7 +251,7 @@ def export_bankfull(bf_group,counter,halfway_polys,ac_polys,complete_polys):
         #use fill gaps function to fill in gaps in the data
         points=os.path.join(env.workspace,naming+"_slopepoints"+str(counter))
         
-        if counter!=1:
+        if counter!=0:
                 polys=fill_polygon_gaps(points,halfway_polys,ac_polys,counter)
                 arcpy.Append_management([polys],complete_polys)
 
@@ -336,7 +336,7 @@ acpolys_perm=arcpy.GetParameterAsText(2)
 ##arcpy.AddMessage("getting count")   
 streamlines_count = int(arcpy.GetCount_management(streamlines).getOutput(0))
 
-counter=1
+counter=0
 iteration_count=1
 bankfull_list=[]
 
@@ -371,7 +371,7 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 ##                        arcpy.AddMessage("exporting bankfull")
 
                         #load data into export bankfull to build polygons
-                        if counter==1:
+                        if counter==0:
                                 result=export_bankfull(bf_group,counter,None,acpolys_perm,None)
 
                         else:
@@ -384,9 +384,9 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 arcpy.SelectLayerByAttribute_management(ac_polygons, "CLEAR_SELECTION")
 #clean up bankfull polygon overextractions by getting rid of bankfull polys that are not adj to
 #ac polys
-close_bankfull=os.path.join(env.workspace,naming+"bankfull_polys_final1")
-copy_features(ac_polygons,env.workspace,"perm_AC")
-ac_polygons=os.path.join(env.workspace,"perm_AC")
+close_bankfull=os.path.join(env.workspace,naming+"bankfull_polys_final")
+copy_features(ac_polygons,env.workspace,naming+"perm_AC")
+ac_polygons=os.path.join(env.workspace,naming+"perm_AC")
 arcpy.Near_analysis(close_bankfull,ac_polygons)
 query="NEAR_DIST=0"
 lyr=arcpy.MakeFeatureLayer_management(close_bankfull,"layerz",query)
