@@ -384,7 +384,7 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 arcpy.SelectLayerByAttribute_management(ac_polygons, "CLEAR_SELECTION")
 #clean up bankfull polygon overextractions by getting rid of bankfull polys that are not adj to
 #ac polys
-close_bankfull=os.path.join(env.workspace,naming+"bankfull_polys_final")
+close_bankfull=os.path.join(env.workspace,naming+"bankfull_polys_final"+str(counter-3))
 copy_features(ac_polygons,env.workspace,naming+"perm_AC")
 ac_polygons=os.path.join(env.workspace,naming+"perm_AC")
 arcpy.Near_analysis(close_bankfull,ac_polygons)
