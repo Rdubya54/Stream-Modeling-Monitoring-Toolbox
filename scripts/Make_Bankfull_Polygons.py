@@ -322,6 +322,9 @@ def fill_polygon_gaps(points,master_polys,ac_polys,counter):
 #insure streamlines are sequential 
 streamlines=get_sequential_ids(streamlines)
 
+#get OBJECTID field
+oid_fieldname = arcpy.ListFields(streamlines,"","OID")[0].name
+
 #check resolution of slope. resolution must be 5x5 for this process to work
 slope=check_resolution(slope)
 
@@ -352,7 +355,7 @@ with arcpy.da.SearchCursor(streamlines, (search_fields)) as search:
 ##                        arcpy.AddMessage("selecting lines")
                         
                         #select some streamlines
-                        streamlines_select=arcpy.MakeFeatureLayer_management(streamlines,"layerp","OBJECTID >="+str(counter)+" AND OBJECTID<="+str(counter+2))
+                        streamlines_select=arcpy.MakeFeatureLayer_management(streamlines,"layerp",oid_fieldname+" >="+str(counter)+" AND "+oid_fieldname+" <="+str(counter+2))
 
                         #extract points for selected streamlines
                         extracted_points=extract_selection(streamlines_select,counter,slope)
